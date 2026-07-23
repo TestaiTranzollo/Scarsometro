@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tennis Speed Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Specific styles for the index/menu page */
+        #menu-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        p {
+            font-size: 16px;
+            margin-bottom: 40px;
+            color: #ccc;
+        }
+
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .menu-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid #00ff00;
+            color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .menu-btn span.subtext {
+            font-size: 14px;
+            font-weight: normal;
+            color: #aaa;
+        }
+
+        .menu-btn:hover, .menu-btn:active {
+            background-color: rgba(0, 255, 0, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .menu-btn svg {
+            width: 40px;
+            height: 40px;
+            fill: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu-container">
+        <h1>Tennis Speed Tracker</h1>
+        <p>Seleziona la posizione della fotocamera</p>
+
+        <div class="menu-options">
+            <a href="baseline.html" class="menu-btn">
+                <svg viewBox="0 0 24 24"><path d="M4,18V20H20V18H4M12,4L5,15H19L12,4M12,7L15.42,13H8.58L12,7Z" /></svg>
+                Vista da Fondocampo
+                <span class="subtext">Telefono posizionato dietro la riga di fondo</span>
+            </a>
+
+            <a href="sideview.html" class="menu-btn">
+                <svg viewBox="0 0 24 24"><path d="M21 3H3C2 3 1 4 1 5V19C1 20 2 21 3 21H21C22 21 23 20 23 19V5C23 4 22 3 21 3M21 19H3V5H21V19M15 11L8 15V7L15 11Z" /></svg>
+                Vista Laterale
+                <span class="subtext">Telefono posizionato a lato del campo</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
