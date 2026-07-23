@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tennis Speed Tracker - Vista Laterale</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- OpenCV.js will be loaded dynamically -->
+    <script async src="https://docs.opencv.org/4.8.0/opencv.js" id="opencv-script"></script>
+</head>
+<body>
+    <div id="app-container">
+        <div id="video-container">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <canvas id="canvas-overlay"></canvas>
+
+            <!-- Calibration Pins (Different initial layout for side view) -->
+            <div id="pin-tl" class="calibration-pin" style="top: 30%; left: 10%;"></div>
+            <div id="pin-tr" class="calibration-pin" style="top: 30%; left: 90%;"></div>
+            <div id="pin-bl" class="calibration-pin" style="top: 70%; left: 10%;"></div>
+            <div id="pin-br" class="calibration-pin" style="top: 70%; left: 90%;"></div>
+        </div>
+
+        <div id="ui-overlay">
+            <div class="top-bar">
+                <div class="speed-display">
+                    <div id="current-speed">--</div>
+                    <span>km/h</span>
+                </div>
+
+                <div class="toggle-container">
+                    <div class="toggle-label">Modalità Stima</div>
+                    <label class="switch">
+                        <input type="checkbox" id="algo-toggle">
+                        <span class="slider"></span>
+                    </label>
+                    <div class="toggle-texts">
+                        <span>2D (Piano)</span>
+                        <span>3D (Traiettoria)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-bar">
+                <button class="btn" id="recalibrate-btn">Ricalibra</button>
+                <button class="btn" id="gallery-btn">Galleria (<span id="gallery-count">0</span>)</button>
+            </div>
+        </div>
+
+        <div id="gallery-modal">
+            <div class="gallery-header">
+                <h2>Istantanee Velocità</h2>
+                <button class="close-btn" id="close-gallery">&times;</button>
+            </div>
+            <div id="gallery-grid">
+                <!-- Gallery items will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/calibration.js"></script>
+    <script src="js/tracking.js"></script>
+    <script src="js/speed.js"></script>
+    <script src="js/gallery.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
