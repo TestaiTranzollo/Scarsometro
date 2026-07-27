@@ -8,31 +8,41 @@ const COURT_WIDTH = 8.23;
 const COURT_LENGTH = 23.77;
 
 // Mapping of court corners (Top-Left, Top-Right, Bottom-Right, Bottom-Left) in meters
-// Origin (0,0) is at the top-left corner of the court.
+// Since the camera is behind a player at ~2m height, the near baseline might not be fully visible.
+// We calibrate using the FAR baseline and the NET line to be more robust.
+// Origin (0,0) is the top-left corner of the far baseline.
+// Net is in the middle: y = 11.885
+const NET_DISTANCE = COURT_LENGTH / 2;
+
 const realCourtCorners = [
-    { x: 0, y: 0 },
-    { x: COURT_WIDTH, y: 0 },
-    { x: COURT_WIDTH, y: COURT_LENGTH },
-    { x: 0, y: COURT_LENGTH }
+    { x: 0, y: 0 }, // Far Left (Baseline)
+    { x: COURT_WIDTH, y: 0 }, // Far Right (Baseline)
+    { x: COURT_WIDTH, y: NET_DISTANCE }, // Net Right
+    { x: 0, y: NET_DISTANCE } // Net Left
 ];
 
 function getPinCoordinates() {
-    const container = document.getElementById('video-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    // Get pin elements
     const tl = document.getElementById('pin-tl');
     const tr = document.getElementById('pin-tr');
     const bl = document.getElementById('pin-bl');
     const br = document.getElementById('pin-br');
 
-    // Extract percentage positions and convert to pixels relative to the container
+    // Convert pin position relative to the document into video pixel coordinates
     const getPos = (pin) => {
-        return {
-            x: (parseFloat(pin.style.left) / 100) * width,
-            y: (parseFloat(pin.style.top) / 100) * height
-        };
+        const rect = pin.getBoundingClientRect();
+        const pinCenterX = rect.left + rect.width / 2;
+        const pinCenterY = rect.top + rect.height / 2;
+
+        const canvasRect = canvasOverlay.getBoundingClientRect();
+
+        // Map to internal video resolution
+        const scaleX = canvasOverlay.width / canvasRect.width;
+        const scaleY = canvasOverlay.height / canvasRect.height;
+
+        const x = (pinCenterX - canvasRect.left) * scaleX;
+        const y = (pinCenterY - canvasRect.top) * scaleY;
+
+        return { x, y };
     };
 
     return [
@@ -75,9 +85,44 @@ function updateHomography() {
         dstPts.delete();
 
         console.log("Homography updated.");
+
+        // Draw the court outline to give immediate visual feedback
+        drawCourtOutline(imagePoints);
+
     } catch (e) {
          console.error("Error updating homography:", e);
     }
+}
+
+function drawCourtOutline(pts) {
+    if (!ctxOverlay || !canvasOverlay) return;
+
+    // Clear only if tracking isn't running yet, tracking will clear it on its own loop
+    // But to be safe, we just draw over it.
+    ctxOverlay.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+
+    ctxOverlay.beginPath();
+    ctxOverlay.moveTo(pts[0].x, pts[0].y); // TL
+    ctxOverlay.lineTo(pts[1].x, pts[1].y); // TR
+    ctxOverlay.lineTo(pts[2].x, pts[2].y); // BR (Net Right)
+    ctxOverlay.lineTo(pts[3].x, pts[3].y); // BL (Net Left)
+    ctxOverlay.closePath();
+
+    ctxOverlay.lineWidth = 3;
+    ctxOverlay.strokeStyle = 'rgba(0, 150, 255, 0.8)'; // Blueish
+    ctxOverlay.stroke();
+
+    // Fill slightly
+    ctxOverlay.fillStyle = 'rgba(0, 150, 255, 0.1)';
+    ctxOverlay.fill();
+
+    // Draw text labels
+    ctxOverlay.font = "20px Arial";
+    ctxOverlay.fillStyle = "white";
+    ctxOverlay.fillText("Fondo Sx", pts[0].x, pts[0].y - 10);
+    ctxOverlay.fillText("Fondo Dx", pts[1].x, pts[1].y - 10);
+    ctxOverlay.fillText("Rete Dx", pts[2].x, pts[2].y + 20);
+    ctxOverlay.fillText("Rete Sx", pts[3].x, pts[3].y + 20);
 }
 
 function autoCalibrate() {
