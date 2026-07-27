@@ -45,11 +45,11 @@ function processFrame() {
 
             cv.cvtColor(blurFrame, hsvFrame, cv.COLOR_RGB2HSV, 0);
 
-            // Define range for Optic Yellow in HSV
-            // OpenCV HSV ranges: H: 0-179, S: 0-255, V: 0-255
-            // Tennis ball yellow is usually around H: 30-45, S: 100-255, V: 100-255
-            let lowerYellow = new cv.Mat(hsvFrame.rows, hsvFrame.cols, hsvFrame.type(), [25, 50, 50, 0]);
-            let upperYellow = new cv.Mat(hsvFrame.rows, hsvFrame.cols, hsvFrame.type(), [50, 255, 255, 0]);
+            // Define range for Optic Yellow / Light Green / White in HSV
+            // Tennis ball yellow in shadows can look very different.
+            // Widening the range to catch light yellow, green-yellow, and bright white (glare on the ball).
+            let lowerYellow = new cv.Mat(hsvFrame.rows, hsvFrame.cols, hsvFrame.type(), [20, 30, 80, 0]);
+            let upperYellow = new cv.Mat(hsvFrame.rows, hsvFrame.cols, hsvFrame.type(), [65, 255, 255, 0]);
 
             cv.inRange(hsvFrame, lowerYellow, upperYellow, mask);
 
