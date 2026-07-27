@@ -1,26 +1,21 @@
 // js/tracking.js
 
-let bgSubtractor = null;
 let lastFrameTime = 0;
 let ballTrajectory = []; // Stores recent ball positions {x, y, time}
 let cap = null;
 let frame = null;
-let fgMask = null;
-let gray = null;
+let hsvFrame = null;
+let mask = null;
 let blurFrame = null;
 
 function initTracker() {
     if (!cvReady || !video) return;
 
-    // Initialize background subtractor (MOG2)
-    // Adjust history and varThreshold based on testing
-    bgSubtractor = new cv.BackgroundSubtractorMOG2(500, 16, true);
-
     cap = new cv.VideoCapture(video);
     frame = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
-    fgMask = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC1);
-    gray = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC1);
-    blurFrame = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC1);
+    hsvFrame = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC3);
+    mask = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC1);
+    blurFrame = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC3);
 }
 
 function processFrame() {
@@ -41,42 +36,49 @@ function processFrame() {
         try {
             cap.read(frame);
 
-            // Convert to grayscale for faster processing
-            cv.cvtColor(frame, gray, cv.COLOR_RGBA2GRAY, 0);
+            // Convert from RGBA to RGB, then to HSV
+            cv.cvtColor(frame, blurFrame, cv.COLOR_RGBA2RGB, 0);
 
-            // Apply slight blur to reduce noise
-            let ksize = new cv.Size(3, 3);
-            cv.GaussianBlur(gray, blurFrame, ksize, 0, 0, cv.BORDER_DEFAULT);
+            // Apply slight blur to reduce noise before color filtering
+            let ksize = new cv.Size(5, 5);
+            cv.GaussianBlur(blurFrame, blurFrame, ksize, 0, 0, cv.BORDER_DEFAULT);
 
-            // Apply background subtraction
-            bgSubtractor.apply(blurFrame, fgMask);
+            cv.cvtColor(blurFrame, hsvFrame, cv.COLOR_RGB2HSV, 0);
 
-            // Remove shadow and noise (thresholding)
-            cv.threshold(fgMask, fgMask, 200, 255, cv.THRESH_BINARY);
+            // Define range for Optic Yellow in HSV
+            // OpenCV HSV ranges: H: 0-179, S: 0-255, V: 0-255
+            // Tennis ball yellow is usually around H: 30-45, S: 100-255, V: 100-255
+            let lowerYellow = new cv.Mat(hsvFrame.rows, hsvFrame.cols, hsvFrame.type(), [25, 50, 50, 0]);
+            let upperYellow = new cv.Mat(hsvFrame.rows, hsvFrame.cols, hsvFrame.type(), [50, 255, 255, 0]);
+
+            cv.inRange(hsvFrame, lowerYellow, upperYellow, mask);
+
+            lowerYellow.delete();
+            upperYellow.delete();
 
             // Morphological operations to remove small noise dots and fill holes
-            let M = cv.Mat.ones(3, 3, cv.CV_8U);
-            cv.erode(fgMask, fgMask, M);
-            cv.dilate(fgMask, fgMask, M);
-            cv.dilate(fgMask, fgMask, M);
+            let M = cv.Mat.ones(5, 5, cv.CV_8U);
+            cv.erode(mask, mask, M);
+            cv.dilate(mask, mask, M);
             M.delete();
 
             // Find contours
             let contours = new cv.MatVector();
             let hierarchy = new cv.Mat();
-            cv.findContours(fgMask, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+            cv.findContours(mask, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
             let bestBall = null;
-            let minRadius = 2;
-            let maxRadius = 30; // Tennis ball shouldn't appear too large
+            // Loosened constraints to catch blurred/moving balls
+            let minRadius = 1;
+            let maxRadius = 50;
 
             // Analyze contours to find the ball
             for (let i = 0; i < contours.size(); ++i) {
                 let cnt = contours.get(i);
 
-                // Area filter
+                // Area filter (very loose for blur)
                 let area = cv.contourArea(cnt);
-                if (area < 10 || area > 1000) {
+                if (area < 5 || area > 2000) {
                     cnt.delete();
                     continue;
                 }
@@ -84,14 +86,15 @@ function processFrame() {
                 // Get bounding circle
                 let circle = cv.minEnclosingCircle(cnt);
                 if (circle.radius >= minRadius && circle.radius <= maxRadius) {
-                    // It's a candidate for a ball
-                    // We could add more checks (e.g. aspect ratio, color filtering for yellow)
-                    bestBall = {
-                        x: circle.center.x,
-                        y: circle.center.y,
-                        radius: circle.radius,
-                        area: area
-                    };
+                    // Pick the one with the highest area (most likely the ball if color matches)
+                    if (!bestBall || area > bestBall.area) {
+                        bestBall = {
+                            x: circle.center.x,
+                            y: circle.center.y,
+                            radius: circle.radius,
+                            area: area
+                        };
+                    }
                 }
                 cnt.delete();
             }
@@ -99,8 +102,12 @@ function processFrame() {
             contours.delete();
             hierarchy.delete();
 
-            // Clear overlay
+            // Clear overlay, then redraw court if available
             ctxOverlay.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+            if (typeof getPinCoordinates === 'function') {
+                const pts = getPinCoordinates();
+                if (typeof drawCourtOutline === 'function') drawCourtOutline(pts);
+            }
 
             if (bestBall) {
                 // Draw detected ball

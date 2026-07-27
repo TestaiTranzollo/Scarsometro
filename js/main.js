@@ -83,12 +83,31 @@ async function initCamera() {
 }
 
 function resizeCanvas() {
-    // Match canvas size to actual video dimensions for accurate overlay
+    // Determine letterboxing dimensions since video is 'contain'
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const containerRatio = video.clientWidth / video.clientHeight;
+
+    let displayWidth = video.clientWidth;
+    let displayHeight = video.clientHeight;
+
+    if (videoRatio > containerRatio) {
+        displayHeight = displayWidth / videoRatio;
+    } else {
+        displayWidth = displayHeight * videoRatio;
+    }
+
+    // Match canvas size to actual video dimensions for accurate internal coordinates
     canvasOverlay.width = video.videoWidth;
     canvasOverlay.height = video.videoHeight;
-    // Set CSS size to match the video element's actual displayed size
-    canvasOverlay.style.width = video.clientWidth + 'px';
-    canvasOverlay.style.height = video.clientHeight + 'px';
+
+    // Position and size canvas over the exactly rendered video area
+    canvasOverlay.style.width = displayWidth + 'px';
+    canvasOverlay.style.height = displayHeight + 'px';
+
+    const topOffset = (video.clientHeight - displayHeight) / 2;
+    const leftOffset = (video.clientWidth - displayWidth) / 2;
+    canvasOverlay.style.top = topOffset + 'px';
+    canvasOverlay.style.left = leftOffset + 'px';
 }
 
 function onOpenCvReady() {
