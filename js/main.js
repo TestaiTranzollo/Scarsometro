@@ -170,6 +170,7 @@ function makeDraggable(elmnt) {
 
     function elementDragTouch(e) {
         e = e || window.event;
+        e.preventDefault(); // Prevent scrolling while dragging in landscape
         if(e.touches.length > 0) {
             pos1 = pos3 - e.touches[0].clientX;
             pos2 = pos4 - e.touches[0].clientY;
@@ -180,7 +181,6 @@ function makeDraggable(elmnt) {
     }
 
     function updatePosition() {
-        // Calculate new position as percentage to remain responsive
         let container = document.getElementById('video-container');
         let newTop = elmnt.offsetTop - pos2;
         let newLeft = elmnt.offsetLeft - pos1;
@@ -189,6 +189,9 @@ function makeDraggable(elmnt) {
         newTop = Math.max(0, Math.min(newTop, container.clientHeight));
         newLeft = Math.max(0, Math.min(newLeft, container.clientWidth));
 
+        // In landscape, absolute pixels are often more reliable than percentages due to viewport changes
+        // but percentages keep it responsive if the window resizes.
+        // We will stick to percentage but based strictly on client dimensions.
         let topPct = (newTop / container.clientHeight) * 100;
         let leftPct = (newLeft / container.clientWidth) * 100;
 
