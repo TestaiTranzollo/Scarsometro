@@ -110,11 +110,20 @@ function processFrame() {
             }
 
             if (bestBall) {
-                // Draw detected ball
+                // Draw detected ball with a prominent crosshair to make it highly visible
                 ctxOverlay.beginPath();
-                ctxOverlay.arc(bestBall.x, bestBall.y, bestBall.radius, 0, 2 * Math.PI, false);
-                ctxOverlay.lineWidth = 2;
+                ctxOverlay.arc(bestBall.x, bestBall.y, Math.max(bestBall.radius, 10), 0, 2 * Math.PI, false);
+                ctxOverlay.lineWidth = 3;
                 ctxOverlay.strokeStyle = 'lime';
+                ctxOverlay.stroke();
+
+                ctxOverlay.beginPath();
+                ctxOverlay.moveTo(bestBall.x - 20, bestBall.y);
+                ctxOverlay.lineTo(bestBall.x + 20, bestBall.y);
+                ctxOverlay.moveTo(bestBall.x, bestBall.y - 20);
+                ctxOverlay.lineTo(bestBall.x, bestBall.y + 20);
+                ctxOverlay.lineWidth = 2;
+                ctxOverlay.strokeStyle = 'red';
                 ctxOverlay.stroke();
 
                 // Add to trajectory
